@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+      <TargetFramework>net5.0-windows</TargetFramework>
+      <UseWindowsForms>true</UseWindowsForms>
+      <Platforms>AnyCPU;x64</Platforms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\uicommon\uicommon.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="core.interop">
+      <HintPath>..\ext\core.interop.dll</HintPath>
+    </Reference>
+    <Reference Include="WebullApi">
+      <HintPath>..\ext\WebullApi.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
