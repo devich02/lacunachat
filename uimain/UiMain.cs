@@ -19,10 +19,30 @@ namespace lacunachat
 
             public UIState MainUi { get; private set; }
 
-            public JObject State { get; private set; }
+            public JObject State => JObject.FromObject(InternalState);
+
+
+            class StateData
+            {
+                public String Username { get; set; } = "";
+                public String ChatHost { get; set; } = "";
+
+            }
+
+            StateData InternalState = new StateData();
 
             public void Initialize(Form host, JObject state)
             {
+
+                if (state != null)
+                {
+                    try
+                    {
+                        InternalState = state.ToObject<StateData>();
+                    }
+                    catch { }
+                }
+
 
                 LoginUi = new UIState(host);
                 MainUi = new UIState(host);
@@ -48,10 +68,10 @@ namespace lacunachat
 
 
                 LoginUi.Controls.Add(new WatcherTextbox {
-                    Font = new Font ("Segoe UI", 12, FontStyle.Italic),
-                    Text = "username",
-                    TextBrush = new SolidBrush(Color.FromArgb(100, ((SolidBrush)(new WatcherTextbox()).TextBrush).Color)),
-                    Tag = true,
+                    Font = new Font("Segoe UI", 12, InternalState.Username.Length == 0 ? FontStyle.Italic : FontStyle.Regular),
+                    Text = InternalState.Username.Length > 0 ? InternalState.Username : "username",
+                    TextBrush = new SolidBrush(Color.FromArgb(InternalState.Username.Length == 0 ? 100 : 255, ((SolidBrush)(new WatcherTextbox()).TextBrush).Color)),
+                    Tag = InternalState.Username.Length == 0,
                     Width = 240,
                     Height = -1,
                     Owner = host,
@@ -79,10 +99,11 @@ namespace lacunachat
                             }
                         }
                     },
+                    OnTextChanged = (c, t) => InternalState.Username = t,
                     Bindings = new List<Action<WatcherControl, WatcherControl>> { 
                         (p, c) => {
                             c.X = p.X + p.Width / 2.0f - c.Width / 2.0f;
-                            c.Y = p.Y + p.Height + 15;
+                            c.Y = p.Y + p.Height + 25;
                         }
                     }
                 });
@@ -129,7 +150,61 @@ namespace lacunachat
                     }
                 });
 
+                LoginUi.Controls.Add(new WatcherTextbox
+                {
+                    Font = new Font("Segoe UI", 12, InternalState.ChatHost.Length == 0 ? FontStyle.Italic : FontStyle.Regular),
+                    Text = InternalState.ChatHost.Length > 0 ? InternalState.ChatHost : "chat-host",
+                    TextBrush = new SolidBrush(Color.FromArgb(InternalState.ChatHost.Length == 0 ? 100 : 255, ((SolidBrush)(new WatcherTextbox()).TextBrush).Color)),
+                    Tag = InternalState.ChatHost.Length == 0,
+                    Width = 240,
+                    Height = -1,
+                    Owner = host,
+                    OnFocusChanged = (c, f) =>
+                    {
+                        if (f)
+                        {
+                            if (c.Tag != null && ((bool)c.Tag))
+                            {
+                                c.Text = "";
+                                c.Tag = false;
 
+                                c.Font = new Font("Segoe UI", 12);
+                                c.TextBrush = new SolidBrush(Color.FromArgb(255, ((SolidBrush)c.TextBrush).Color));
+                            }
+                        }
+                        else
+                        {
+                            if (c.Text.Length == 0)
+                            {
+                                c.Tag = true;
+                                c.Font = new Font("Segoe UI", 12, FontStyle.Italic);
+                                c.TextBrush = new SolidBrush(Color.FromArgb(100, ((SolidBrush)c.TextBrush).Color));
+                                c.Text = "chat-host";
+                            }
+                        }
+                    },
+                    OnTextChanged = (c, t) => InternalState.ChatHost = t,
+                    Bindings = new List<Action<WatcherControl, WatcherControl>> {
+                        (p, c) => {
+                            c.X = p.X + p.Width / 2.0f - c.Width / 2.0f;
+                            c.Y = p.Y + p.Height + 10;
+                        }
+                    }
+                });
+
+
+                LoginUi.Controls.Add(new WatcherButton {
+                    Font = new Font("Segoe UI", 12),
+                    Text= "Login  •  Create",
+                    Width = 240,
+                    Height = -1,
+                    Bindings = new List<Action<WatcherControl, WatcherControl>> {
+                        (p, c) => {
+                            c.X = p.X + p.Width / 2.0f - c.Width / 2.0f;
+                            c.Y = p.Y + p.Height + 15;
+                        }
+                    }
+                });
 
             }
 

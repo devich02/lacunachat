@@ -5,7 +5,7 @@ using WebullApi;
 
 using Lacuna;
 
-namespace lacunachat_server
+namespace lacunachat
 {
     class Program
     {
@@ -82,7 +82,10 @@ lacunachat-server
                 using (var db = new Connection(dbserver, (ushort)dbport))
                 {
 
-                    try { } catch { }
+                    try { db.CreateTable<Users>(); "Created table: User".WriteLine(ConsoleColor.Green); } catch (Exception ex) { $"Table User already exists ({ex.Message})".WriteLine(ConsoleColor.Yellow); }
+
+
+
 
                 }
             }

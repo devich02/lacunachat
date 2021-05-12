@@ -4,9 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace lacunachat_common
+using Lacuna;
+
+namespace lacunachat
 {
-    public class User
+    public class Users
     {
+        [DbColumn] public String Name { get; set; }
+
     }
 }
