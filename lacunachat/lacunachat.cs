@@ -19,16 +19,18 @@ namespace lacunachat
     public partial class lacunachat : Form
     {
 
-        UIState hotUi = null;
 
         uicommon.LacunaChatUi hostUI = null;
 
-        console console = new console();
+        console console = null;
 
         String currentState = "login";
 
+#if DEBUG
+        UIState hotUi = null;
         FileSystemWatcher fsw = null;
         string lastShadow = "";
+#endif
 
         public lacunachat()
         {
@@ -38,6 +40,7 @@ namespace lacunachat
             this.ResizeEnd += Lacunachat_ResizeEnd;
             this.ResizeRedraw = true;
 
+#if DEBUG
             hotUi = new UIState(this);
             hotUi.Add(new WatcherTextbox
             {
@@ -99,13 +102,16 @@ namespace lacunachat
             fsw.NotifyFilter = NotifyFilters.LastWrite;
             fsw.EnableRaisingEvents = true;
 
+            console = new console();
+            console.Show();
+#endif
+
             hostUI = new uimain.UiMain();
             hostUI.Initialize(this, null);
 
             hostUI.LoginUi.Enabled = true;
             hostUI.LoginUi.Repaint();
 
-            console.Show();
         }
 
         private void Lacunachat_ResizeEnd(object sender, EventArgs e)

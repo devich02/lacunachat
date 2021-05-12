@@ -1,25 +1,31 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net5.0-windows</TargetFramework>
-    <UseWindowsForms>true</UseWindowsForms>
+    <OutputType>Exe</OutputType>
+      <TargetFramework>net5.0-windows7.0</TargetFramework>
+    <RootNamespace>lacunachat_server</RootNamespace>
     <Platforms>AnyCPU;x64</Platforms>
+    <RunPostBuildEvent>Always</RunPostBuildEvent>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\lacunachat-common\lacunachat-common.csproj" />
-    <ProjectReference Include="..\uicommon\uicommon.csproj" />
-    <ProjectReference Include="..\uimain\uimain.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Reference Include="core.interop">
       <HintPath>..\ext\core.interop.dll</HintPath>
     </Reference>
+    <Reference Include="core.net">
+      <HintPath>..\ext\core.net.dll</HintPath>
+    </Reference>
     <Reference Include="WebullApi">
       <HintPath>..\ext\WebullApi.dll</HintPath>
     </Reference>
   </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="xcopy.exe /y $(SolutionDir)..\ext\Ijwhost.dll $(TargetDir)" />
+  </Target>
 
 </Project>
