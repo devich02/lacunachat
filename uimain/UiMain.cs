@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 using WebullApi.UI;
 
 using System.Drawing;
+using System.Net.Sockets;
+
+using WebullApi;
 
 namespace lacunachat
 {
@@ -30,6 +33,8 @@ namespace lacunachat
             }
 
             StateData InternalState = new StateData();
+
+            WatcherLabel lblMessage = null;
 
             public void Initialize(Form host, JObject state)
             {
@@ -169,7 +174,7 @@ namespace lacunachat
                                 c.Tag = false;
 
                                 c.Font = new Font("Segoe UI", 12);
-                                c.TextBrush = new SolidBrush(Color.FromArgb(255, ((SolidBrush)c.TextBrush).Color));
+                                c.TextBrush = new SolidBrush(Color.FromArgb(255, ((SolidBrush)(new WatcherTextbox()).TextBrush).Color));
                             }
                         }
                         else
@@ -178,12 +183,14 @@ namespace lacunachat
                             {
                                 c.Tag = true;
                                 c.Font = new Font("Segoe UI", 12, FontStyle.Italic);
-                                c.TextBrush = new SolidBrush(Color.FromArgb(100, ((SolidBrush)c.TextBrush).Color));
+                                c.TextBrush = new SolidBrush(Color.FromArgb(100, ((SolidBrush)(new WatcherTextbox()).TextBrush).Color));
                                 c.Text = "chat-host";
                             }
                         }
                     },
-                    OnTextChanged = (c, t) => InternalState.ChatHost = t,
+                    OnTextChanged = (c, t) => { 
+                        InternalState.ChatHost = t;
+                    },
                     Bindings = new List<Action<WatcherControl, WatcherControl>> {
                         (p, c) => {
                             c.X = p.X + p.Width / 2.0f - c.Width / 2.0f;
@@ -195,9 +202,26 @@ namespace lacunachat
 
                 LoginUi.Controls.Add(new WatcherButton {
                     Font = new Font("Segoe UI", 12),
-                    Text= "Login  •  Create",
+                    Text = "Login  •  Create",
                     Width = 240,
                     Height = -1,
+                    Tag = false,
+                    OnClicked = (b) => {
+
+                        ChatServer server = new ChatServer(InternalState.ChatHost);
+                        try
+                        {
+                            server.Test();
+                            lblMessage.TextBrush = new SolidBrush(Color.LightGreen);
+                            lblMessage.Text = "Connected";
+                        }
+                        catch
+                        {
+                            lblMessage.TextBrush = new SolidBrush(Color.FromArgb(255, 144, 144));
+                            lblMessage.Text = "Could not reach the chat server";
+                        }
+
+                    },
                     Bindings = new List<Action<WatcherControl, WatcherControl>> {
                         (p, c) => {
                             c.X = p.X + p.Width / 2.0f - c.Width / 2.0f;
@@ -206,6 +230,19 @@ namespace lacunachat
                     }
                 });
 
+                LoginUi.Controls.Add(lblMessage = new WatcherLabel
+                {
+                    Font = new Font("Segoe UI", 12),
+                    Text = "",
+                    Width = 240,
+                    Height = -1,
+                    Bindings = new List<Action<WatcherControl, WatcherControl>> {
+                        (p, c) => {
+                            c.X = p.X + p.Width / 2.0f - c.Width / 2.0f;
+                            c.Y = p.Y + p.Height + 20;
+                        }
+                    }
+                });
             }
 
             private void LoginUi_BeforeUIPaint(object arg1, PaintEventArgs e, MouseState arg3, WindowState arg4)

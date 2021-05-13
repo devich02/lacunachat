@@ -10,10 +10,11 @@ namespace lacunachat
 {
     namespace tables
     {
-        public class Users
+        public class Messages
         {
-            [DbColumn] public String Name { get; set; }
-            [DbColumn] public String Key { get; set; }
+            [DbColumn] public String From { get; set; }
+            [DbColumn] public String To { get; set; }
+            [DbColumn] public String Message { get; set; }
         }
     }
 }

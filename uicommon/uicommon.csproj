@@ -11,6 +11,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\lacunachat-common\lacunachat-common.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="core.interop">
       <HintPath>..\ext\core.interop.dll</HintPath>
     </Reference>
