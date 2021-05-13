@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Lacuna;
+using Newtonsoft.Json.Linq;
 
 namespace lacunachat
 {
@@ -16,6 +17,7 @@ namespace lacunachat
             [DbColumn] public String Key { get; set; }
             [DbColumn] public String DecryptKey { get; set; }
             [DbColumn] public long CreateTimeUtc { get; set; }
+            [DbColumn] public JToken Friends { get; set; }
         }
 
         public class AccessTokens

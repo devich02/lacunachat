@@ -30,6 +30,9 @@ namespace lacunachat
                 public String Username { get; set; } = "";
                 public String ChatHost { get; set; } = "";
 
+
+                public uicommon.UiPage CurrentPage = uicommon.UiPage.Login;
+                public JToken Friends { get; set; }
             }
 
             StateData InternalState = new StateData();
@@ -37,26 +40,13 @@ namespace lacunachat
             WatcherLabel lblMessage = null;
             WatcherTextbox txtPassword = null;
 
-            public void Initialize(Form host, JObject state)
+            WatcherPanel pnlContacts = null;
+
+            uicommon.Client client;
+
+            private void SetupLoginPage(Form host)
             {
-
-                if (state != null)
-                {
-                    try
-                    {
-                        InternalState = state.ToObject<StateData>();
-                    }
-                    catch { }
-                }
-
-
-                LoginUi = new UIState(host);
-                MainUi = new UIState(host);
-
-                LoginUi.Enabled =
-                    MainUi.Enabled = false;
-
-                LoginUi.BeforeUIPaint += LoginUi_BeforeUIPaint;
+                LoginUi.BeforeUIPaint += BeforeUIPaint;
 
                 LoginUi.Controls.Add(new WatcherLabel
                 {
@@ -73,7 +63,8 @@ namespace lacunachat
 
 
 
-                LoginUi.Controls.Add(new WatcherTextbox {
+                LoginUi.Controls.Add(new WatcherTextbox
+                {
                     Font = new Font("Segoe UI", 12, InternalState.Username.Length == 0 ? FontStyle.Italic : FontStyle.Regular),
                     Text = InternalState.Username.Length > 0 ? InternalState.Username : "username",
                     TextBrush = new SolidBrush(Color.FromArgb(InternalState.Username.Length == 0 ? 100 : 255, ((SolidBrush)(new WatcherTextbox()).TextBrush).Color)),
@@ -106,16 +97,17 @@ namespace lacunachat
                         }
                     },
                     OnTextChanged = (c, t) => InternalState.Username = t,
-                    Bindings = new List<Action<WatcherControl, WatcherControl>> { 
+                    Bindings = new List<Action<WatcherControl, WatcherControl>> {
                         (p, c) => {
                             c.X = p.X + p.Width / 2.0f - c.Width / 2.0f;
                             c.Y = p.Y + p.Height + 25;
                         }
                     }
                 });
-                
-                LoginUi.Controls.Add(txtPassword = new WatcherTextbox {
-                    Font = new Font ("Segoe UI", 12, FontStyle.Italic),
+
+                LoginUi.Controls.Add(txtPassword = new WatcherTextbox
+                {
+                    Font = new Font("Segoe UI", 12, FontStyle.Italic),
                     Text = "password",
                     TextBrush = new SolidBrush(Color.FromArgb(100, ((SolidBrush)(new WatcherTextbox()).TextBrush).Color)),
                     Tag = true,
@@ -148,7 +140,7 @@ namespace lacunachat
                             }
                         }
                     },
-                    Bindings = new List<Action<WatcherControl, WatcherControl>> { 
+                    Bindings = new List<Action<WatcherControl, WatcherControl>> {
                         (p, c) => {
                             c.X = p.X + p.Width / 2.0f - c.Width / 2.0f;
                             c.Y = p.Y + p.Height + 5;
@@ -189,7 +181,7 @@ namespace lacunachat
                             }
                         }
                     },
-                    OnTextChanged = (c, t) => { 
+                    OnTextChanged = (c, t) => {
                         InternalState.ChatHost = t;
                     },
                     Bindings = new List<Action<WatcherControl, WatcherControl>> {
@@ -201,7 +193,8 @@ namespace lacunachat
                 });
 
 
-                LoginUi.Controls.Add(new WatcherButton {
+                LoginUi.Controls.Add(new WatcherButton
+                {
                     Font = new Font("Segoe UI", 12),
                     Text = "Login  •  Create",
                     Width = 240,
@@ -216,6 +209,12 @@ namespace lacunachat
 
                             lblMessage.TextBrush = new SolidBrush(Color.LightGreen);
                             lblMessage.Text = "Logged in";
+
+                            InternalState.CurrentPage = uicommon.UiPage.Main;
+
+                            LoginUi.Enabled = false;
+                            MainUi.Enabled = true;
+                            MainUi.Repaint();
                         }
                         catch
                         {
@@ -223,6 +222,7 @@ namespace lacunachat
                             lblMessage.Text = "Login failed";
                         }
 
+                        LoginUi.Repaint();
                     },
                     Bindings = new List<Action<WatcherControl, WatcherControl>> {
                         (p, c) => {
@@ -247,7 +247,74 @@ namespace lacunachat
                 });
             }
 
-            private void LoginUi_BeforeUIPaint(object arg1, PaintEventArgs e, MouseState arg3, WindowState arg4)
+            private void SetupMainPage(Form host)
+            {
+                MainUi.BeforeUIPaint += BeforeUIPaint;
+
+                MainUi.Controls.Add(new WatcherPanel
+                {
+                    X = 0,
+                    Y = 0,
+                    Width = 150,
+                    Height = -1,
+                    BackBrush = new SolidBrush(Color.FromArgb(20, 24, 30)),
+                    BorderPen = new Pen(Color.FromArgb(8, 12, 23), 3),
+                    Children = new List<WatcherControl> {
+                        new WatcherLabel {
+                            Text = "Contacts",
+                            Font = new Font ("Consolas", 11),
+                            X = 8,
+                            Y = 8,
+                        },
+                        new WatcherPanel {
+                            X = 0,
+                            Height = 3,
+                            Width = -1,
+                            BorderPen = new Pen(Color.Transparent, 1),
+                            BackBrush = new SolidBrush(Color.FromArgb(8, 12, 23)),
+                            Bindings = new List<Action<WatcherControl, WatcherControl>> { (p, c) => c.Y = p.Y + p.Height + 5 }
+                        },
+                        (pnlContacts = new WatcherPanel {
+                            X = 0,
+                            Width = -1,
+                            Height = -1,
+                            BorderPen = Pens.Transparent,
+                            BackBrush = Brushes.Transparent,
+                            Bindings = new List<Action<WatcherControl, WatcherControl>> { (p, c) => c.Y = p.Y + p.Height + 5 }
+                        })
+                    }
+                });
+            }
+
+
+            public void Initialize(Form host, uicommon.Client client, JObject state)
+            {
+
+                this.client = client;
+
+                if (state != null)
+                {
+                    try
+                    {
+                        InternalState = state.ToObject<StateData>();
+                    }
+                    catch { }
+                }
+
+
+                LoginUi = new UIState(host);
+                MainUi = new UIState(host);
+
+                LoginUi.Enabled =
+                    MainUi.Enabled = false;
+
+                SetupLoginPage(host);
+                SetupMainPage(host);
+
+                client.SetPage(InternalState.CurrentPage);
+            }
+
+            private void BeforeUIPaint(object arg1, PaintEventArgs e, MouseState arg3, WindowState arg4)
             {
                 e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                 e.Graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
@@ -256,7 +323,8 @@ namespace lacunachat
 
             public void Dispose()
             {
-                LoginUi.BeforeUIPaint -= LoginUi_BeforeUIPaint;
+                LoginUi.BeforeUIPaint -= BeforeUIPaint;
+                MainUi.BeforeUIPaint -= BeforeUIPaint;
 
                 LoginUi.Dispose();
                 MainUi.Dispose();

@@ -13,10 +13,11 @@ using WebullApi.UI;
 
 using System.IO;
 using System.Reflection;
+using lacunachat.uicommon;
 
 namespace lacunachat
 {
-    public partial class lacunachat : Form
+    public partial class lacunachat : Form, Client
     {
 
 
@@ -24,7 +25,7 @@ namespace lacunachat
 
         console console = null;
 
-        String currentState = "login";
+        UiPage currentPage = UiPage.Login;
 
 #if DEBUG
         UIState hotUi = null;
@@ -79,7 +80,7 @@ namespace lacunachat
 
                             uicommon.LacunaChatUi newHost = uiAsm.CreateFirstInstance<uicommon.LacunaChatUi>();
 
-                            newHost.Initialize(this, hostUI?.State);
+                            newHost.Initialize(this, this, hostUI?.State);
 
                             hostUI?.Dispose();
                             hostUI = newHost;
@@ -87,10 +88,15 @@ namespace lacunachat
                             hostUI.LoginUi.Enabled =
                                 hostUI.MainUi.Enabled = false;
 
-                            if (currentState == "login")
+                            if (currentPage == UiPage.Login)
                             {
                                 hostUI.LoginUi.Enabled = true;
                                 hostUI.LoginUi.Repaint();
+                            }
+                            else
+                            {
+                                hostUI.MainUi.Enabled = true;
+                                hostUI.MainUi.Repaint();
                             }
                         }
                         catch (Exception ex) 
@@ -107,7 +113,7 @@ namespace lacunachat
 #endif
 
             hostUI = new uimain.UiMain();
-            hostUI.Initialize(this, null);
+            hostUI.Initialize(this, this, null);
 
             hostUI.LoginUi.Enabled = true;
             hostUI.LoginUi.Repaint();
@@ -123,5 +129,11 @@ namespace lacunachat
         {
             hostUI?.LoginUi?.Repaint();
         }
+
+        public void SetPage(UiPage page)
+        {
+            currentPage = page;
+        }
+
     }
 }

@@ -130,8 +130,8 @@ lacunachat-server
                                             var user = db.ExecuteTo<tables.Users>($"Users.where(Name == \"{username}\")").ToList();
 
 
-                                            var decryptKey = BigInt128.FromHex(decryptPass); // Keys.FromPassword128(password, Constants.BaseSalt, Constants.BaseKey.ToHexString());
-                                            var testKey = BigInt128.FromHex(challenge); //Keys.FromPassword128(username, Constants.BaseSalt, password);
+                                            var decryptKey = BigInt128.FromHex(decryptPass);
+                                            var testKey = BigInt128.FromHex(challenge);
                                             AES decryptor = new AES(decryptKey);
 
                                             response["type"] = "login/create";
@@ -156,6 +156,10 @@ lacunachat-server
                                                 if (testKey != new BigInt128(decryptor.Decrypt(Convert.FromHexString(user.First().DecryptKey))))
                                                 {
                                                     response["error"] = "Invalid login/cannot create";
+                                                }
+                                                else
+                                                {
+                                                    response["friends"] = user.First().Friends;
                                                 }
                                             }
                                         }
