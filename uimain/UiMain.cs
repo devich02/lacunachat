@@ -35,6 +35,7 @@ namespace lacunachat
             StateData InternalState = new StateData();
 
             WatcherLabel lblMessage = null;
+            WatcherTextbox txtPassword = null;
 
             public void Initialize(Form host, JObject state)
             {
@@ -113,7 +114,7 @@ namespace lacunachat
                     }
                 });
                 
-                LoginUi.Controls.Add(new WatcherTextbox {
+                LoginUi.Controls.Add(txtPassword = new WatcherTextbox {
                     Font = new Font ("Segoe UI", 12, FontStyle.Italic),
                     Text = "password",
                     TextBrush = new SolidBrush(Color.FromArgb(100, ((SolidBrush)(new WatcherTextbox()).TextBrush).Color)),
@@ -211,14 +212,15 @@ namespace lacunachat
                         ChatServer server = new ChatServer(InternalState.ChatHost);
                         try
                         {
-                            server.Test();
+                            server.Login(InternalState.Username, txtPassword.Text);
+
                             lblMessage.TextBrush = new SolidBrush(Color.LightGreen);
-                            lblMessage.Text = "Connected";
+                            lblMessage.Text = "Logged in";
                         }
                         catch
                         {
                             lblMessage.TextBrush = new SolidBrush(Color.FromArgb(255, 144, 144));
-                            lblMessage.Text = "Could not reach the chat server";
+                            lblMessage.Text = "Login failed";
                         }
 
                     },

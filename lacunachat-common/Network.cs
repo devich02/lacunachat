@@ -22,6 +22,8 @@ namespace lacunachat
              );
 
         public static readonly AES BaseCryptor = new AES(BaseKey);
+
+        public static readonly String BaseSalt = "{2A76115C-EE76-48C4-8F7A-5CEAFDD3E6A3}";
     }
 
 
@@ -53,7 +55,28 @@ namespace lacunachat
             if (response["error"] != null) throw new Exception(response["error"].ToString());
         }
 
+        public String Login(String username, String password)
+        {
+            TcpClient ping = new TcpClient(ip, port);
 
+            var decryptKey = Keys.FromPassword128(password, Constants.BaseSalt, Constants.BaseKey.ToHexString());
+            var testKey = Keys.FromPassword128(username, Constants.BaseSalt, password);
+
+            ping.GetStream().SendEncryptedString(Constants.BaseCryptor, new JObject
+            {
+                ["type"] = "login/create",
+                ["user"] = username,
+                ["pass"] = decryptKey.ToHexString(),
+                ["challenge"] = testKey.ToHexString()
+            }.ToString(Newtonsoft.Json.Formatting.None), new object());
+
+            var responseStr = ping.GetStream().ReadEncryptedString(Constants.BaseCryptor);
+            var response = JToken.Parse(responseStr);
+
+            if (response["error"] != null) throw new Exception(response["error"].ToString());
+
+            return "";
+        }
 
     }
 

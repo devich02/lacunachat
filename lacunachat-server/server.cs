@@ -8,6 +8,8 @@ using Lacuna.Crypto;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace lacunachat
 {
@@ -88,6 +90,7 @@ lacunachat-server
 
                     try { db.CreateTable<tables.Users>(); "Created table: Users".WriteLine(ConsoleColor.Green); } catch (Exception ex) { $"Table Users already exists ({ex.Message})".WriteLine(ConsoleColor.Yellow); }
                     try { db.CreateTable<tables.Messages>(); "Created table: Messages".WriteLine(ConsoleColor.Green); } catch (Exception ex) { $"Table Messages already exists ({ex.Message})".WriteLine(ConsoleColor.Yellow); }
+                    try { db.CreateTable<tables.AccessTokens>(); "Created table: AccessTokens".WriteLine(ConsoleColor.Green); } catch (Exception ex) { $"Table AccessTokens already exists ({ex.Message})".WriteLine(ConsoleColor.Yellow); }
 
                     TcpListener server = new TcpListener(IPAddress.Any, port);
 
@@ -116,17 +119,58 @@ lacunachat-server
                                     else
                                     {
                                         if (request["type"].ToString() == "ping") { response["type"] = "pong"; }
+                                        else if (request["type"].ToString() == "login/create")
+                                        {
+                                            String username = request["user"].ToString();
+                                            String decryptPass = request["pass"].ToString();
+                                            String challenge = request["challenge"].ToString();
+
+                                            // todo: db needs locking mechanism
+                                            // todo: db api needs sanitation 
+                                            var user = db.ExecuteTo<tables.Users>($"Users.where(Name == \"{username}\")").ToList();
+
+
+                                            var decryptKey = BigInt128.FromHex(decryptPass); // Keys.FromPassword128(password, Constants.BaseSalt, Constants.BaseKey.ToHexString());
+                                            var testKey = BigInt128.FromHex(challenge); //Keys.FromPassword128(username, Constants.BaseSalt, password);
+                                            AES decryptor = new AES(decryptKey);
+
+                                            response["type"] = "login/create";
+
+                                            // Create the user
+                                            if (user.Count == 0)
+                                            {
+                                                var masterKey = BigInt128.Random();
+
+                                                db.GetTable<tables.Users>()
+                                                  .StreamingInsert(new List<tables.Users> { 
+                                                      new tables.Users {
+                                                          Name = username,
+                                                          Key = Convert.ToHexString(decryptor.Encrypt(masterKey.ToByteArray())),
+                                                          DecryptKey = Convert.ToHexString(decryptor.Encrypt(testKey.ToByteArray()))
+                                                      }
+                                                  });
+                                            }
+                                            // Log the user in
+                                            else
+                                            {
+                                                if (testKey != new BigInt128(decryptor.Decrypt(Convert.FromHexString(user.First().DecryptKey))))
+                                                {
+                                                    response["error"] = "Invalid login/cannot create";
+                                                }
+                                            }
+                                        }
                                     }
 
                                     client.GetStream().SendEncryptedString(Constants.BaseCryptor, response.ToString(Newtonsoft.Json.Formatting.None), lockObj);
-
-                                    client.Dispose();
                                 }
                                 catch (Exception ex)
                                 {
                                     ex.Message.ToString().WriteLine(ConsoleColor.Red);
                                 }
-                            
+
+                                client.Close();
+                                client.Dispose();
+
                             })).Start();
                         }
                         catch (Exception ex)
