@@ -33,6 +33,9 @@ namespace lacunachat
 
                 public uicommon.UiPage CurrentPage = uicommon.UiPage.Login;
                 public JToken Friends { get; set; }
+
+
+                public JObject Session { get; set; }
             }
 
             StateData InternalState = new StateData();
@@ -41,6 +44,9 @@ namespace lacunachat
             WatcherTextbox txtPassword = null;
 
             WatcherPanel pnlContacts = null;
+            WatcherPanel pnlAddContacts = null;
+
+            ChatServer Session = null;
 
             uicommon.Client client;
 
@@ -202,15 +208,16 @@ namespace lacunachat
                     Tag = false,
                     OnClicked = (b) => {
 
-                        ChatServer server = new ChatServer(InternalState.ChatHost);
+                        Session = new ChatServer(InternalState.ChatHost);
                         try
                         {
-                            server.Login(InternalState.Username, txtPassword.Text);
+                            Session.Login(InternalState.Username, txtPassword.Text);
 
                             lblMessage.TextBrush = new SolidBrush(Color.LightGreen);
                             lblMessage.Text = "Logged in";
 
                             InternalState.CurrentPage = uicommon.UiPage.Main;
+                            InternalState.Session = Session.ToJson();
 
                             LoginUi.Enabled = false;
                             MainUi.Enabled = true;
@@ -218,6 +225,7 @@ namespace lacunachat
                         }
                         catch
                         {
+                            Session = null;
                             lblMessage.TextBrush = new SolidBrush(Color.FromArgb(255, 144, 144));
                             lblMessage.Text = "Login failed";
                         }
@@ -266,6 +274,31 @@ namespace lacunachat
                             X = 8,
                             Y = 8,
                         },
+                        new WatcherButton { 
+                            Width = 25,
+                            Height = -1,
+                            Text = "+",
+                            BorderPen = new Pen (Color.FromArgb(8, 12, 23), 1),
+                            BackBrush = new SolidBrush(Color.FromArgb(30, 34, 40)),
+                            HighlightBrush = new SolidBrush(Color.FromArgb(40, 44, 50)),
+                            Font = new Font ("Consolas", 11),
+                            OnClicked = (b) => {
+                                if ((pnlAddContacts.Visible = !pnlAddContacts.Visible))
+                                {
+                                    b.Text = "-";
+                                }
+                                else
+                                {
+                                    b.Text = "+";
+                                }
+                            },
+                            Bindings = new List<Action<WatcherControl, WatcherControl>> { (p, c) => {
+                                c.X = p.X + p.Width + 10;
+                                c.Y = p.Y-2;
+                                pnlAddContacts.X = c.X + c.Width + 4;
+                                pnlAddContacts.Y = c.Y - 2;
+                            } }
+                        },
                         new WatcherPanel {
                             X = 0,
                             Height = 3,
@@ -284,6 +317,29 @@ namespace lacunachat
                         })
                     }
                 });
+
+
+                MainUi.Add(pnlAddContacts = new WatcherPanel
+                {
+                    Visible = false,
+                    Width = 130,
+                    Height = 20,
+                    Owner = host,
+                    Children = new List<WatcherControl> {
+                        new WatcherTextbox {
+                            Width = 130,
+                            Height = 20,
+                            Font = new Font ("Consolas", 9),
+                            OnPreKeyed = (b, k) => { 
+                                if (k.KeyCode == Keys.Enter)
+                                {
+                                    pnlAddContacts.Visible = false;
+                                }
+                            },
+                            Owner = host
+                        }
+                    }
+                });
             }
 
 
@@ -297,8 +353,12 @@ namespace lacunachat
                     try
                     {
                         InternalState = state.ToObject<StateData>();
+                        Session = ChatServer.FromJson(InternalState.Session);
                     }
-                    catch { }
+                    catch 
+                    {
+                        InternalState.CurrentPage = uicommon.UiPage.Login;
+                    }
                 }
 
 

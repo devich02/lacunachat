@@ -51,6 +51,7 @@ namespace lacunachat
                 Height = -1,
                 Text = "C:/Users/gianc/source/repos/lacunachat/uimain/bin/x64/Debug/net5.0-windows/uimain.dll"
             });
+            hotUi.Enabled = false;
 
             fsw = new FileSystemWatcher(@"C:\Users\gianc\source\repos\lacunachat\uimain\bin\x64\Debug\net5.0-windows");
             fsw.Changed += (object sender, FileSystemEventArgs e) =>

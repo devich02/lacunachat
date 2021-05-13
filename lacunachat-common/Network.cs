@@ -32,6 +32,9 @@ namespace lacunachat
         public String ip = "";
         public int port = 0;
 
+        private BigInt128 decKey = null;
+
+        private ChatServer() { }
         public ChatServer(String address)
         {
             var parts = address.Split(':');
@@ -39,6 +42,22 @@ namespace lacunachat
             port = int.Parse(parts[1]);
         }
 
+        public JObject ToJson()
+        {
+            return new JObject {
+                ["ip"] = ip,
+                ["port"] = port,
+                ["dec"] = decKey.ToHexString()
+            };
+        }
+        public static ChatServer FromJson(JObject obj)
+        {
+            return new ChatServer { 
+                ip = obj["ip"].ToString(),
+                port = obj["port"].ToObject<int>(),
+                decKey = BigInt128.FromHex(obj["dec"].ToString())
+            };
+        }
 
         public void Test()
         {
@@ -55,27 +74,31 @@ namespace lacunachat
             if (response["error"] != null) throw new Exception(response["error"].ToString());
         }
 
-        public String Login(String username, String password)
+        public JToken Login(String username, String password)
         {
             TcpClient ping = new TcpClient(ip, port);
 
-            var decryptKey = Keys.FromPassword128(password, Constants.BaseSalt, Constants.BaseKey.ToHexString());
+            decKey = Keys.FromPassword128(password, Constants.BaseSalt, Constants.BaseKey.ToHexString());
             var testKey = Keys.FromPassword128(username, Constants.BaseSalt, password);
 
             ping.GetStream().SendEncryptedString(Constants.BaseCryptor, new JObject
             {
                 ["type"] = "login/create",
                 ["user"] = username,
-                ["pass"] = decryptKey.ToHexString(),
+                ["pass"] = decKey.ToHexString(),
                 ["challenge"] = testKey.ToHexString()
             }.ToString(Newtonsoft.Json.Formatting.None), new object());
 
             var responseStr = ping.GetStream().ReadEncryptedString(Constants.BaseCryptor);
             var response = JToken.Parse(responseStr);
 
-            if (response["error"] != null) throw new Exception(response["error"].ToString());
+            if (response["error"] != null)
+            {
+                decKey = null;
+                throw new Exception(response["error"].ToString());
+            }
 
-            return "";
+            return response["friends"];
         }
 
     }
